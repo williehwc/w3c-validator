@@ -14,8 +14,8 @@ import json
 import commands
 import urllib
 
-html_validator_url = 'http://validator.w3.org/check'
 css_validator_url = 'http://jigsaw.w3.org/css-validator/validator'
+html_validator_url = 'https://validator.w3.org/nu/?out=text&level=error'
 
 verbose_option = False
 
@@ -37,30 +37,25 @@ def validate(filename):
     if filename.startswith('http://'):
         # Submit URI with GET.
         if filename.endswith('.css'):
-            cmd = ('curl -sG -d uri=%s -d output=json -d warning=0 %s'
+            cmd = ('curl -sG -d uri=%s -d warning=0 %s'
                     % (quoted_filename, css_validator_url))
         else:
-            cmd = ('curl -sG -d uri=%s -d output=json %s'
+            cmd = ('curl -sG -d uri=%s %s'
                     % (quoted_filename, html_validator_url))
     else:
         # Upload file as multipart/form-data with POST.
         if filename.endswith('.css'):
-            cmd = ('curl -sF "file=@%s;type=text/css" -F output=json -F warning=0 %s'
-                    % (quoted_filename, css_validator_url))
+            cmd = ('curl -sF "file=@%s;type=text/css" -F output=json -F warning=no %s'
+                    % (filename, css_validator_url))
         else:
-            cmd = ('curl -sF "uploaded_file=@%s;type=text/html" -F output=json %s'
-                    % (quoted_filename, html_validator_url))
+            cmd = ('curl -s -H "Content-Type: text/html; charset=utf-8" --data-binary @%s "%s"'
+                    % (filename, html_validator_url))
     verbose(cmd)
     status,output = commands.getstatusoutput(cmd)
     if status != 0:
         raise OSError (status, 'failed: %s' % cmd)
     verbose(output)
-    try:
-        result = json.loads(output)
-    except ValueError:
-        result = ''
-    time.sleep(2)   # Be nice and don't hog the free validator service.
-    return result
+    return output
 
 
 if __name__ == '__main__':
@@ -69,12 +64,15 @@ if __name__ == '__main__':
         args = sys.argv[2:]
     else:
         args = sys.argv[1:]
-    if len(args) == 0:
-        message('usage: %s [--verbose] FILE|URL...' % os.path.basename(sys.argv[0]))
-        exit(1)
     errors = 0
     warnings = 0
-    for f in args:
+    if len(sys.argv) >= 2 and sys.argv[1] == '--css':
+        files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(os.getcwd()) for f in filenames if os.path.splitext(f)[1] == '.css']
+        pass_phrase = '"errorcount"   : 0,'
+    else:
+        files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(os.getcwd()) for f in filenames if os.path.splitext(f)[1] == '.htm' or os.path.splitext(f)[1] == '.html']
+        pass_phrase = 'The document validates according to the specified schema(s).'
+    for f in files:
         message('validating: %s ...' % f)
         retrys = 0
         while retrys < 2:
@@ -87,24 +85,8 @@ if __name__ == '__main__':
             message('failed: %s' % f)
             errors += 1
             continue
-        if f.endswith('.css'):
-            errorcount = result['cssvalidation']['result']['errorcount']
-            warningcount = result['cssvalidation']['result']['warningcount']
-            errors += errorcount
-            warnings += warningcount
-            if errorcount > 0:
-                message('errors: %d' % errorcount)
-            if warningcount > 0:
-                message('warnings: %d' % warningcount)
-        else:
-            for msg in result['messages']:
-                if 'lastLine' in msg:
-                    message('%(type)s: line %(lastLine)d: %(message)s' % msg)
-                else:
-                    message('%(type)s: %(message)s' % msg)
-                if msg['type'] == 'error':
-                    errors += 1
-                else:
-                    warnings += 1
+        if pass_phrase not in result:
+            print('=== ' + os.path.basename(os.path.normpath(f)) + ' ===')
+            print(result + '\n')
     if errors:
         exit(1)
