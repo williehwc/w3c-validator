@@ -14,7 +14,7 @@ CSS:
   
   python w3c-validator.py --css
   
-Verbose HTML (for troubleshooting)
+Verbose HTML (for troubleshooting):
 
   python w3c-validator.py --verbose
 
