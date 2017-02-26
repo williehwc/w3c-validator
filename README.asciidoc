@@ -1,68 +1,22 @@
-// Use this source for both GitHub README and blogpost.
-:blogpost-title: W3C Command-line Validator
-:blogpost-status: published
-:blogpost-doctype: article
-:blogpost-posttype: post
-:blogpost-categories: Python, W3C, validator
-
-= {blogpost-title}
-
-ifdef::blogpost[]
-*Published*: 2011-04-29
-endif::blogpost[]
-
-A command-line script (written in Python) for validating HTML and CSS
-files and URLs using the WC3 validators.
-
-ifdef::blogpost[]
-// Wordpress processing instruction.
-pass::[<!--more-->]
-endif::blogpost[]
-
-The `w3c-validator.py` script uses the `curl(1)` command to submit
-HTML files and URLs to the http://validator.w3.org/[W3C Markup
-Validation Service] and CSS files and URLs to the
-http://jigsaw.w3.org/css-validator/[W3C CSS Validation Service].  The
-script parses and reports the JSON results returned by the validators.
-
-NOTE: Currently the CSS validator's JSON output option is experimental
-and not formally documented.
-
-ifdef::blogpost[]
-You can find the source on GitHub at https://github.com/srackham/w3c-validator
-endif::blogpost[]
+This is a modification of srackham's w3c-validator for grading students' HTML/CSS frontends.
+Students can also use this script to make sure that their files are W3C-compliant.
+It recursively checks every HTML and CSS file in the current directory.
+Note that only errors (not warnings) are printed.
 
 == Usage
-The script command syntax is:
+Go to the directory that you are grading, then enter
 
-  python w3c-validator.py [--verbose] FILE|URL...
+HTML:
 
-- The optional `--verbose` option will print information about what is
-  going on internally.
-- Names with a `.css` extension are treated as CSS, all other names
-  are assumed to contain HTML.
-- Names starting with `http://` are assumed to be publically
-  accessible URLs, all other names are assumed to be local file names.
-- Any mix of one or more local files or HTTP URLs can be specified.
-- If one or more files fail validation then the exit status will be 1,
-  if no errors occurs the exits status will be zero.
+  python w3c-validator.py
+  
+CSS:
+  
+  python w3c-validator.py --css
+  
+Verbose HTML (for troubleshooting)
 
-Examples (`w3c-validator` is just a convenient symbolic link in the
-shell 'PATH' to the executable `w3c-validator.py` script):
-
---------------------------------------------------------------
-$ w3c-validator tests/data/testcases-html5.html
-validating: tests/data/testcases-html5.html ...
-error: line 822: The tt element is obsolete. Use CSS instead.
-error: line 829: The tt element is obsolete. Use CSS instead.
-error: line 838: The tt element is obsolete. Use CSS instead.
---------------------------------------------------------------
-
---------------------------------------------------------------
-$ w3c-validator http://www.methods.co.nz/asciidoc/layout1.css 
-validating: http://www.methods.co.nz/asciidoc/layout1.css ...
---------------------------------------------------------------
-
+  python w3c-validator.py --verbose
 
 == Resources
 - http://validator.w3.org/docs/users.html[User's guide for the W3C
@@ -77,3 +31,4 @@ validating: http://www.methods.co.nz/asciidoc/layout1.css ...
 - An Internet connection.
 
 Written and tested on Xubuntu 10.04 with Python 2.6.5, should work on other Python platforms.
+Also works on macOS.
